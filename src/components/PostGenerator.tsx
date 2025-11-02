@@ -30,6 +30,8 @@ export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '
   const [showDrafts, setShowDrafts] = useState(false)
   const autosaveRef = useRef<string | null>(null)
   const [lastAutosave, setLastAutosave] = useState<number | null>(null)
+  const lastSavedContentRef = useRef<string>('')
+  const [now, setNow] = useState<number>(Date.now())
 
   const generatePost = async () => {
     try {
@@ -83,7 +85,12 @@ export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '
     async function initAutosave() {
       try {
         const autos = await getAutosave()
-        if (autos) autosaveRef.current = autos.id
+        if (autos) {
+          autosaveRef.current = autos.id
+          // reflect persisted autosave timestamp and content so the UI shows correct relative time
+          setLastAutosave(autos.created)
+          lastSavedContentRef.current = autos.content || ''
+        }
       } catch (e) {
         // ignore
       }
@@ -91,9 +98,12 @@ export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '
     initAutosave()
 
     const id = setInterval(() => {
+      // only autosave if content changed since last autosave to avoid creating many writes
+      if (content === lastSavedContentRef.current) return
       // silently autosave current content
       saveOrUpdateAutosave(content).then((savedId) => {
         if (!autosaveRef.current) autosaveRef.current = savedId
+        lastSavedContentRef.current = content
         setLastAutosave(Date.now())
       }).catch(err => {
         // ignore autosave failures
@@ -104,6 +114,23 @@ export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '
     return () => clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Update `now` every second while we have a lastAutosave so the relative time label stays fresh
+  useEffect(() => {
+    if (!lastAutosave) return;
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [lastAutosave])
+
+  function formatRelativeTime(ts: number | null) {
+    if (!ts) return 'never'
+    const diff = Math.max(0, Math.floor((now - ts) / 1000))
+    if (diff < 60) return `saved ${diff}s ago`
+    const mins = Math.floor(diff / 60)
+    if (mins < 60) return `saved ${mins}m ago`
+    const hours = Math.floor(mins / 60)
+    return `saved ${hours}h ago`
+  }
 
   const handleSaveDraft = async () => {
     try {
@@ -149,7 +176,7 @@ export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '
         />
 
         <div className="text-xs text-gray-500 mb-3">
-          Last autosave: {lastAutosave ? new Date(lastAutosave).toLocaleTimeString() : 'never'}
+          Last autosave: {formatRelativeTime(lastAutosave)}
         </div>
 
         {/* Action Buttons */}

@@ -1,7 +1,10 @@
 import { formatLinkedInPost, validatePostLength, addSmartHashtags } from '../utils/postFormatting';
 import enhancedGenerator from '../utils/enhancedGenerator';
 import { ragService } from './RAGService';
+import { retrieveSimilar } from './vectorStore';
+import engagementPredictor from './engagementPredictor';
 import { generateDraft } from './localGenerator';
+import { generateWithModel } from './generator';
 
 export type Tone = 'casual' | 'professional' | 'technical';
 
@@ -26,12 +29,23 @@ class PostGenerationService {
     impact: number;
     relevance: number;
   }> {
-    // This will be replaced with actual ML model predictions
-    return {
-      engagement: 0.85,
-      impact: 0.90,
-      relevance: 0.75,
-    };
+    try {
+      const engagement = await engagementPredictor.scoreEngagement(content)
+      const impact = Math.max(0, Math.min(1, engagement * 0.9 + (content.length > 200 ? 0.05 : 0)))
+      const relevance = Math.max(0, Math.min(1, engagement * 0.8 + 0.1))
+      return { engagement, impact, relevance }
+    } catch (e) {
+      return {
+    //   engagement: 0.85,
+    //   impact: 0.90,
+    //   relevance: 0.75,
+    // };
+
+        engagement: 0.5,
+        impact: 0.5,
+        relevance: 0.5,
+      }
+    }
   }
 
   private async suggestHashtags(content: string): Promise<string[]> {
@@ -49,8 +63,25 @@ class PostGenerationService {
   public async generateFinalPost(content: string, opts: GenerateOptions): Promise<PostGenerationResult> {
     let finalContent = content;
     try {
-      // Get similar examples for style matching
-      const examples = ragService.getSimilarExamples(content, 3);
+      // Get similar examples for style matching. Prefer embeddings-based retrieval (async)
+      let examples: string[] = [];
+      try {
+        const sim = await retrieveSimilar(content, 3);
+        if (sim && sim.length) {
+          examples = sim.map(s => s.text)
+        }
+      } catch (e) {
+        // ignore and fall back
+      }
+
+      if (!examples.length) {
+        // fallback to token-based RAG service (synchronous)
+        try {
+          examples = ragService.getSimilarExamples(content, 3);
+        } catch (e) {
+          examples = []
+        }
+      }
 
       // If no content provided, seed from local generator draft
       if (!finalContent || !finalContent.trim()) {
@@ -62,7 +93,18 @@ class PostGenerationService {
         }
       }
 
-      // Enhance the content based on tone
+      // If an on-device generator model exists, try it first (it will fall back internally)
+      try {
+        const prompt = [finalContent, ...(examples || [])].filter(Boolean).join('\n\n---\n\n')
+        const modelOut = await generateWithModel(prompt, { maxTokens: 256 })
+        if (modelOut && modelOut.trim()) {
+          finalContent = modelOut
+        }
+      } catch (e) {
+        // ignore generator model failures and continue with heuristics
+      }
+
+      // Enhance the content based on tone (formatting, hooks, CTAs, hashtags)
       finalContent = enhancedGenerator.enhancePost(finalContent, {
         tone: opts.tone,
         examples,

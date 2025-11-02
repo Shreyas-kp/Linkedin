@@ -1,4 +1,15 @@
 import examplesData from '../data/examples.json';
+// optionally use precomputed embeddings if present
+let examplesWithEmbeddings: any[] | null = null;
+  try {
+    // load a precomputed file if present
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // @ts-ignore
+    const maybe = require('../data/examples_with_embeddings.json');
+    if (Array.isArray(maybe)) examplesWithEmbeddings = maybe;
+  } catch (e) {
+    examplesWithEmbeddings = null;
+  }
 
 // Simple in-memory RAG service using TF-based vectors and cosine similarity.
 // This is intentionally lightweight and runs synchronously.
@@ -38,6 +49,10 @@ export class RAGService {
   constructor() {
     // load examples from JSON
     this.examples = (examplesData as Example[]).slice(0, 1000);
+    // if we have a precomputed embedding file, prefer it for offline deterministic similarity
+    if (examplesWithEmbeddings) {
+      this.examples = examplesWithEmbeddings.slice(0, 1000).map((e:any)=>({ id: e.id, text: e.text, tags: e.tags }))
+    }
     for (const ex of this.examples) {
       const toks = tokenize(ex.text);
       this.exampleTfs[ex.id] = toTfMap(toks);

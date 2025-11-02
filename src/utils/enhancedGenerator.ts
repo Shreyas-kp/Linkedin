@@ -75,7 +75,21 @@ export function ensureHook(text: string, opts?: EnhanceOptions) {
   // Synthesize a concise hook by taking the first 12 words and adding a question or strong statement
   const first12 = first.split(/\s+/).slice(0,12).join(' ');
   const tone = opts?.tone || 'professional';
-  const hookTail = tone === 'casual' ? '— here’s why:' : tone === 'technical' ? '— the details:' : '— why it matters:';
+  // If examples are provided, bias the hook toward example keywords for tighter context
+  const exampleTexts: string[] | undefined = (opts as any)?.examples || (opts as any)?.__examples;
+  let hookTail = tone === 'casual' ? '— here’s why:' : tone === 'technical' ? '— the details:' : '— why it matters:';
+  if (exampleTexts && exampleTexts.length) {
+    // pull a top keyword from examples to make hook feel anchored
+    try {
+      const exKeys = extractKeywords(exampleTexts[0], 1);
+      if (exKeys && exKeys.length) {
+        const kw = exKeys[0].split(' ').slice(0,3).join(' ');
+        hookTail = tone === 'casual' ? `— what ${kw} taught us:` : tone === 'technical' ? `— ${kw} explained:` : `— why ${kw} matters:`;
+      }
+    } catch (e) {
+      // ignore and use default hookTail
+    }
+  }
   const hook = `${first12} ${hookTail}`;
   return [hook, ...paragraphs].join('\n\n');
 }
@@ -177,7 +191,7 @@ export function enhancePost(raw: string, opts?: EnhanceOptions) {
   // if examples were passed via opts (not ideal to put examples in opts),
   // but PostGenerationService will now pass examples as a third param when available.
   // For backward compatibility, allow opts to contain a small `__examples` field.
-  const exampleTexts: string[] | undefined = (opts as any)?.__examples;
+  const exampleTexts: string[] | undefined = (opts as any)?.examples || (opts as any)?.__examples;
   const tags = generateHashtagsFromKeywords(text, 4, opts, exampleTexts);
   if (tags.length) {
     text = `${text}\n\n${tags.join(' ')}`;
