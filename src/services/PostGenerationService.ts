@@ -1,6 +1,7 @@
 import { formatLinkedInPost, validatePostLength, addSmartHashtags } from '../utils/postFormatting';
 import enhancedGenerator from '../utils/enhancedGenerator';
 import { ragService } from './RAGService';
+import { generateDraft } from './localGenerator';
 
 export type Tone = 'casual' | 'professional' | 'technical';
 
@@ -50,20 +51,36 @@ class PostGenerationService {
     try {
       // Get similar examples for style matching
       const examples = ragService.getSimilarExamples(content, 3);
-      
+
+      // If no content provided, seed from local generator draft
+      if (!finalContent || !finalContent.trim()) {
+        try {
+          finalContent = await generateDraft({ goal: 'Share a professional update', tone: opts.tone });
+        } catch (e) {
+          // fallback to empty string and continue
+          finalContent = '';
+        }
+      }
+
       // Enhance the content based on tone
-      finalContent = enhancedGenerator.enhancePost(content, {
+      finalContent = enhancedGenerator.enhancePost(finalContent, {
         tone: opts.tone,
         examples,
       });
     } catch (e) {
       // fallback if RAG fails for any reason
-      finalContent = enhancedGenerator.enhancePost(content, opts);
+      try {
+        finalContent = enhancedGenerator.enhancePost(content || '', opts);
+      } catch (err) {
+        // keep finalContent as-is and continue to formatting fallback below
+      }
     }
 
     // As a safety-net, fall back to formatting and hashtag helpers if enhancer returns empty
     if (!finalContent || !finalContent.trim()) {
-      finalContent = formatLinkedInPost(content);
+      // As last resort, use the input content or a freshly generated draft
+      const seed = content && content.trim() ? content : (await generateDraft({ goal: 'Share a professional update' })) || '';
+      finalContent = formatLinkedInPost(seed);
       const hashtags = await this.suggestHashtags(finalContent);
       finalContent = addSmartHashtags(finalContent, hashtags);
     }

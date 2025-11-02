@@ -4,6 +4,7 @@ import { MetricsPanel } from './MetricsPanel';
 import { useTheme } from '../context/ThemeContext';
 import { PaperAirplaneIcon, ClipboardDocumentIcon, ShareIcon } from '@heroicons/react/24/outline';
 import type { Tone } from '../utils/enhancedGenerator';
+import Toast from './Toast';
 
 interface PostGeneratorProps {
   initialContent?: string;
@@ -47,11 +48,14 @@ export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(content);
-      // TODO: Add toast notification
+      setToast('Copied to clipboard')
     } catch (error) {
       console.error('Error copying to clipboard:', error);
+      setToast('Copy failed')
     }
   };
+
+  const [toast, setToast] = useState<string | null>(null)
 
   const shareToLinkedIn = () => {
     const encodedText = encodeURIComponent(content);
@@ -103,6 +107,9 @@ export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '
         impact={metrics.impact}
         relevance={metrics.relevance}
       />
+      {toast && (
+        <Toast message={toast} onClose={() => setToast(null)} />
+      )}
     </div>
   );
 };
