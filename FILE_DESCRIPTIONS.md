@@ -133,3 +133,227 @@ If you want, I can now:
 - (C) Generate a searchable JSON manifest mapping file → description for tooling.
 
 Tell me which follow-up you prefer and I'll apply it.
+
+## TODO: Files that need expanded documentation
+
+The following files are high-value targets for expanded docs (props, public API, edge-cases). Add a short `TODO` note here when you want me to open and document them in full.
+
+- `src/services/PostGenerationService.ts` — TODO: expand (explain generateFinalPost options, metrics shape, fail modes)
+- `src/services/RAGService.ts` — TODO: expand (describe example format, TF heuristic, scaling limits)
+- `src/services/vectorStore.ts` — TODO: expand (IndexedDB schema and retrieval guarantees)
+- `src/services/engagementPredictor.ts` — TODO: expand (describe scoring heuristic and intended replacement)
+- `src/components/PostGenerator_new.tsx` — TODO: expand (props, events, saved preferences behavior)
+- `src/components/EnhancedPostGenerator.tsx` — TODO: expand (tab behaviors, templates, metrics mapping)
+- `src/components/LinkedInPostBuilder.tsx` — TODO: expand (modes: write/templates/enhance and copy/export behaviors)
+- `src/context/ThemeContext.tsx` — TODO: expand (data-model stored on root and CSS variable mapping)
+
+Add more or tell me which of these to fully document next.
+
+## Snippet previews (first non-empty line)
+
+Below are one-line snippet previews for key files to help you scan the code quickly.
+
+`src/main.tsx` — import line:
+```ts
+import React from 'react'
+```
+
+`src/index.css` — first rule:
+```css
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+```
+
+`src/styles.css` — first rule:
+```css
+:root{ --bg:#fafafa; --muted:#666; --accent:#0a66c2 }
+```
+
+`src/App.tsx` — first component line:
+```tsx
+import React, { useState } from 'react';
+```
+
+`src/App_new.tsx` — first component line:
+```tsx
+import React from 'react';
+```
+
+`src/components/Button.tsx` — first export:
+```tsx
+import React from 'react';
+```
+
+`src/components/Card.tsx` — first export:
+```tsx
+import React from 'react';
+```
+
+`src/components/Header.tsx` — first import line:
+```tsx
+import React from 'react';
+```
+
+`src/components/Layout.tsx` — first import line:
+```tsx
+import React from 'react';
+```
+
+`src/components/PostGenerator.tsx` — first import line:
+```tsx
+import React, { useState } from 'react';
+```
+
+`src/components/PostGenerator_new.tsx` — first import line:
+```tsx
+import React, { useState, useEffect } from 'react';
+```
+
+`src/components/EnhancedPostGenerator.tsx` — first import line:
+```tsx
+import React, { useState } from 'react';
+```
+
+`src/components/LinkedINPostBuilder.tsx` — first import line:
+```tsx
+import React, { useState } from 'react';
+```
+
+`src/components/PostEditor.tsx` — first import line:
+```tsx
+import React, {useState, useEffect} from 'react'
+```
+
+`src/components/StyleLibrary.tsx` — first import line:
+```tsx
+import React, { useEffect, useState } from 'react';
+```
+
+`src/components/SettingsSidebar.tsx` — first import line:
+```tsx
+import React from 'react';
+```
+
+`src/components/MetricsPanel.tsx` — first import line:
+```tsx
+import React from 'react';
+```
+
+`src/components/MetricIndicator.tsx` — first import line:
+```tsx
+import React from 'react';
+```
+
+`src/components/HashtagDisplay.tsx` — first import line:
+```tsx
+import React from 'react';
+```
+
+`src/components/TextArea.tsx` — first import line:
+```tsx
+import React from 'react';
+```
+
+`src/context/ThemeContext.tsx` — first import line:
+```ts
+import React, { createContext, useContext, useEffect, useState } from 'react';
+```
+
+`src/services/localGenerator.ts` — first comment & signature:
+```ts
+/**
+ * localGenerator provides a pluggable adapter for in-browser generation.
+ */
+```
+
+`src/services/PostGenerationService.ts` — first import line:
+```ts
+import { formatLinkedInPost, validatePostLength, addSmartHashtags } from '../utils/postFormatting';
+```
+
+`src/services/RAGService.ts` — first lines:
+```ts
+import examplesData from '../data/examples.json';
+```
+
+`src/services/vectorStore.ts` — first import line:
+```ts
+import { openDB } from 'idb'
+```
+
+`src/services/hashtagSuggester.ts` — first comment:
+```ts
+/**
+ * Simple hashtag suggester placeholder.
+ */
+```
+
+`src/services/engagementPredictor.ts` — first comment:
+```ts
+/**
+ * engagementPredictor should be replaced with a small TF.js model running locally.
+ */
+```
+
+`src/services/toxicityChecker.ts` — first comment:
+```ts
+/**
+ * toxicityChecker is a local placeholder.
+ */
+```
+
+`src/utils/postFormatting.ts` — first export:
+```ts
+export const formatLinkedInPost = (content: string): string => {
+```
+
+`src/utils/enhancedGenerator.ts` — first comment:
+```ts
+/**
+ * Deterministic post enhancer to produce LinkedIn-ready posts.
+ */
+```
+
+`src/data/examples.json` — first item id:
+```json
+{"id":"ex1","text":"Launched a new training pipeline..."}
+```
+
+`package.json` — first key:
+```json
+{
+	"name": "linkedin-post-optimizer",
+```
+
+`tailwind.config.js` — file header:
+```js
+/** @type {import('tailwindcss').Config} */
+```
+
+`postcss.config.js` — content:
+```js
+module.exports = {
+	plugins: {
+		'@tailwindcss/postcss7-compat': {},
+		autoprefixer: {},
+	},
+}
+```
+
+`vite.config.ts` — first export:
+```ts
+import { defineConfig } from 'vite'
+```
+
+`index.html` — first line:
+```html
+<!doctype html>
+```
+
+`README.md` — first line:
+```md
+# LinkedIn Post Optimizer — Local-first scaffold
+```
+
+---
+
+If you want more files added to the snippet preview or prefer full 3–5 line snippets, tell me and I will expand the list.

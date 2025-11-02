@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { postGenerationService } from '../services/PostGenerationService';
 import { MetricsPanel } from './MetricsPanel';
 import { useTheme } from '../context/ThemeContext';
 import { PaperAirplaneIcon, ClipboardDocumentIcon, ShareIcon } from '@heroicons/react/24/outline';
 import type { Tone } from '../utils/enhancedGenerator';
 import Toast from './Toast';
+import { saveDraft, openDBAndGetAll, deleteDraft, saveOrUpdateAutosave, getAutosave } from '../services/drafts';
 
 interface PostGeneratorProps {
   initialContent?: string;
@@ -25,6 +26,10 @@ export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '
     impact: 85,
     relevance: 65
   });
+  const [drafts, setDrafts] = useState<Array<{ id: string; title?: string; content: string; created: number }>>([])
+  const [showDrafts, setShowDrafts] = useState(false)
+  const autosaveRef = useRef<string | null>(null)
+  const [lastAutosave, setLastAutosave] = useState<number | null>(null)
 
   const generatePost = async () => {
     try {
@@ -62,6 +67,75 @@ export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodedText}`, '_blank');
   };
 
+  // Drafts: load list and autosave every 5s
+  useEffect(() => {
+    // load drafts and autosave id
+    async function initDrafts() {
+      try {
+        const d = await openDBAndGetAll()
+        setDrafts(d)
+      } catch (e) {
+        console.error('Failed to load drafts', e)
+      }
+    }
+    initDrafts()
+
+    async function initAutosave() {
+      try {
+        const autos = await getAutosave()
+        if (autos) autosaveRef.current = autos.id
+      } catch (e) {
+        // ignore
+      }
+    }
+    initAutosave()
+
+    const id = setInterval(() => {
+      // silently autosave current content
+      saveOrUpdateAutosave(content).then((savedId) => {
+        if (!autosaveRef.current) autosaveRef.current = savedId
+        setLastAutosave(Date.now())
+      }).catch(err => {
+        // ignore autosave failures
+        console.debug('autosave failed', err)
+      })
+    }, 5000)
+
+    return () => clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleSaveDraft = async () => {
+    try {
+      const id = await saveDraft(content)
+      setToast('Draft saved')
+      const d = await openDBAndGetAll()
+      setDrafts(d)
+    } catch (e) {
+      console.error('Failed to save draft', e)
+      setToast('Save failed')
+    }
+  }
+
+  const handleRestoreDraft = async (id: string) => {
+    const d = drafts.find(x => x.id === id)
+    if (!d) return
+    setContent(d.content)
+    setToast('Draft restored')
+  }
+
+  const handleDeleteDraft = async (id: string) => {
+    try {
+      await deleteDraft(id)
+      const d = await openDBAndGetAll()
+      setDrafts(d)
+      setToast('Draft deleted')
+    } catch (e) {
+      console.error('Failed to delete draft', e)
+      setToast('Delete failed')
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Post Editor */}
@@ -73,6 +147,10 @@ export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '
           placeholder="Share your professional insights..."
           className="textarea mb-4"
         />
+
+        <div className="text-xs text-gray-500 mb-3">
+          Last autosave: {lastAutosave ? new Date(lastAutosave).toLocaleTimeString() : 'never'}
+        </div>
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4">
@@ -91,6 +169,18 @@ export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '
             <ClipboardDocumentIcon className="w-5 h-5" />
             Copy
           </button>
+          <button
+            className="btn-secondary"
+            onClick={handleSaveDraft}
+          >
+            Save Draft
+          </button>
+          <button
+            className="btn-secondary"
+            onClick={() => setShowDrafts(s => !s)}
+          >
+            Drafts {drafts.length ? `(${drafts.length})` : ''}
+          </button>
           <button 
             className="btn-secondary"
             onClick={shareToLinkedIn}
@@ -100,6 +190,28 @@ export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '
           </button>
         </div>
       </div>
+
+      {/* Drafts list */}
+      {showDrafts && (
+        <div className="card">
+          <h3 className="font-semibold mb-2">Drafts</h3>
+          {drafts.length === 0 && <div className="text-sm text-muted-foreground">No drafts yet.</div>}
+          <ul className="space-y-2">
+            {drafts.map(d => (
+              <li key={d.id} className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="font-medium">{d.title || d.content.slice(0, 60)}</div>
+                  <div className="text-xs text-gray-500">{new Date(d.created).toLocaleString()}</div>
+                </div>
+                <div className="flex gap-2">
+                  <button className="btn-secondary" onClick={() => handleRestoreDraft(d.id)}>Restore</button>
+                  <button className="btn-secondary" onClick={() => handleDeleteDraft(d.id)}>Delete</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Metrics Panel */}
       <MetricsPanel
