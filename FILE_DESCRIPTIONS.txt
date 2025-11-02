@@ -1,0 +1,264 @@
+Project: linkedin-post-optimizer (folder root: c:\Users\Shreyas Kaushik\Projects\Linkedin)
+
+This document describes the purpose of each file and folder in the repository. Use it for onboarding, debugging, and planning feature work. Where I inferred behavior from filenames or usage patterns I noted reasonable assumptions.
+
+---
+
+ROOT / top-level files
+
+index.html
+- The single-page app host HTML for Vite; mounts React app into <div id="root"> and bootstraps /src/main.tsx via a module script.
+
+README.md
+- Project readme with high-level description and usage notes. Good first place for developer setup instructions.
+
+package.json
+- npm manifest; scripts and dependencies. Key scripts: `dev` (vite), `build` (vite build), `preview`, `lint`, `test`.
+- Dependencies: react, react-dom, zustand, idb.
+- Dev deps: vite, tailwindcss, postcss, vitest, eslint, typescript, etc.
+
+package-lock.json
+- npm lockfile for reproducible installs.
+
+vite.config.ts
+- Vite configuration for the dev server and build. Handles React plugin and other Vite features.
+
+vitest.config.ts
+- Test runner (vitest) configuration.
+
+tsconfig.json
+- TypeScript compiler options for the project.
+
+tailwind.config.js
+- Tailwind CSS configuration (theme customization, darkMode setting). Tailwind generates utility classes used by the app.
+
+postcss.config.js
+- PostCSS config that wires Tailwind and autoprefixer for CSS processing during build/dev.
+
+.vscode/ or .github/ (if present)
+- CI configs and workflow definitions are under `.github/workflows/ci.yml` (automated checks/builds).
+
+.prettierrc
+- Prettier configuration for code formatting.
+
+.eslintrc.cjs
+- ESLint configuration for linting rules.
+
+.gitignore
+- Files and folders excluded from git (node_modules, build outputs, artifacts).
+
+architecture.html
+- Internal architecture notes/diagram (project-specific documentation).
+
+linkedin-post-optimizer.zip, linkedin-post-optimizer (1).zip
+- Archive exports of the project (not required for local dev). Can be removed if stale.
+
+CSV / data files (scraped data and mock data)
+- job_listings.csv, mock_courses.csv, mock_data.csv, online_courses.csv, scraped_jobs_aggregated.csv, scraped_linkedin_jobs.csv, etc.
+- These are sample or scraped datasets used by the ML utilities or for sample data in the UI.
+
+served_index_css.txt, vite_page.html
+- Artifacts produced while debugging/running the dev server. `served_index_css.txt` contains the CSS bundle/module served by Vite; `vite_page.html` is a saved copy of the dev server root HTML. Useful debug artifacts; can be removed later.
+
+---
+
+src/ (main frontend source)
+
+src/main.tsx
+- React entry point. Creates React root and renders `<App />`. Also imports `./index.css` so Tailwind layers and custom CSS load.
+- NOTE: a small runtime debug badge was added to help verify whether `index.css` is applied in the browser.
+
+src/index.css
+- Main stylesheet entry. Expected to include Tailwind `@tailwind base; @tailwind components; @tailwind utilities;` and project-level custom rules.
+- This file was recently edited to avoid problematic `@apply dark:...` constructs and to include resilient fallback CSS for critical layout to prevent UI breakage when Tailwind processing fails.
+
+src/styles.css
+- Legacy / alternate stylesheet. Historically the app used this file; make sure `src/main.tsx` imports `index.css` (it does now). If `styles.css` still appears in the browser network tab, it may indicate a stale bundle or cache referencing it.
+
+src/App.tsx
+- Main application component. Composes header, layout, editor, generator, and metrics panel. Entry used in production/dev to orchestrate the UI.
+
+src/App_new.tsx
+- Alternative or experimental version of App. Likely a refactor or staging branch kept in the repo.
+
+src/components/
+- Reusable React UI components and pages. Files include:
+
+  Button.tsx
+  - Small, theme-aware button component used across the app. Encapsulates styling and optional icon slot.
+
+  Card.tsx
+  - Generic card container used for panels and content blocks.
+
+  Header.tsx
+  - Top navigation/header bar. Contains app title, theme toggle, and other global controls.
+
+  Layout.tsx
+  - Page layout wrapper. Likely handles two-column layout (sidebar + main content) and responsive behavior.
+
+  PostGenerator.tsx
+  - Component with controls to generate post drafts (calls localGenerator or PostGenerationService). There are two variants: `PostGenerator.tsx` and `PostGenerator_new.tsx`.
+
+  PostGenerator.tsx.bak
+  - Backup copy of older generator component. Keep only for reference; consider removing when code stabilizes.
+
+  EnhancedPostGenerator.tsx
+  - Experimental or more feature-rich generator UI, likely integrates RAG style library and additional inputs.
+
+  LinkedInPostBuilder.tsx
+  - Component that composes the final post preview (how it will appear on LinkedIn) and provides interaction controls (edit, copy, export).
+
+  PostEditor.tsx
+  - Editor UI for editing the text of a post. Likely uses a textarea or rich-text area and emits the edited content to parent.
+
+  TextArea.tsx
+  - Encapsulated textarea control used by `PostEditor` with sizing and theme styles.
+
+  Input.tsx
+  - Small input field component for single-line text fields.
+
+  StyleLibrary.tsx
+  - UI for the RAG (retrieval-augmented generation) style library. Lets users browse / select writing styles/examples to apply to generated posts.
+
+  SettingsSidebar.tsx
+  - Settings panel used as a sidebar for toggles, export, theme, and other preferences.
+
+  HashtagDisplay.tsx
+  - Component that displays suggested hashtags and allows clicking to add them to a post.
+
+  MetricsPanel.tsx
+  - Shows various metrics and predictions about the current post (engagement predictions, readability, etc.).
+
+  MetricIndicator.tsx
+  - Small visual indicator for a single metric (e.g. engagement score with color/threshold mapping).
+
+  Card.tsx (already listed)
+  - Reusable layout card used for panels.
+
+  LinkedInPostBuilder.tsx (listed)
+  - As above; part of the preview / publish workflow.
+
+src/context/
+
+  ThemeContext.tsx
+  - React context that manages theme (light/dark) and toggles the `dark` root class. Components consume this to adapt styling.
+
+src/components/Header.tsx
+- Top bar that may include the ThemeContext toggle and app-level actions (e.g., open settings).
+
+src/services/
+- Client-side services (mostly TypeScript) that implement business logic, integrations, and adapters. Key files:
+
+  localGenerator.ts
+  - A local in-browser generator: likely contains heuristics or a lightweight model to produce post drafts without external calls.
+
+  PostGenerationService.ts
+  - Higher-level wrapper around generation flows; may call localGenerator, RAGService, or external endpoints if configured.
+
+  RAGService.ts
+  - Retrieval-Augmented Generation helper: fetches style examples from the style library or vector store and uses them to guide generation.
+
+  vectorStore.ts
+  - Simple vector store adapter for storing and retrieving embeddings; may wrap `idb` or in-memory store.
+
+  hashtagSuggester.ts
+  - Service that suggests hashtags for a given post text (heuristics or small ML model).
+
+  engagementPredictor.ts
+  - Predicts engagement score for a post. There is an ML model under `ml/` that likely relates to this service.
+
+  toxicityChecker.ts
+  - Runs a lightweight toxicity check on post content and flags unsafe text.
+
+src/utils/
+
+  postFormatting.ts
+  - Utilities for formatting a post (escaping, removing excess whitespace, preparing CSV lines, etc.). Used by export or copy functions.
+
+  enhancedGenerator.ts
+  - Helper utilities used by EnhancedPostGenerator. Might contain text transformation helpers.
+
+src/data/
+
+  examples.json
+  - JSON file with example posts or writing-style examples used by the style library and RAG retrieval.
+
+---
+
+ml/ (python-based ML utilities and artifacts)
+
+ml/__init__.py
+- Package init for python utilities used locally for model training or inference.
+
+ml/utils.py
+- Python helper functions for preprocessing data, reading CSVs, tokenization helpers, vectorization helpers.
+
+ml/merge_and_label.py
+- Script to merge multiple scraped datasets and produce labeled training data for the engagement predictor model.
+
+ml/train_model1.py
+- Training script that trains a model (e.g., PyTorch or scikit-learn) to predict engagement and writes artifacts to `ml/artifacts/`.
+
+ml/requirements.txt
+- Python requirements for ML tooling (torch, scikit-learn, joblib, etc.). Use a separate venv to run ML scripts.
+
+ml/artifacts/
+
+  model.pt
+  - Trained model weights (PyTorch or similar). Used as a reference or for exporting model predictions.
+
+  vectorizer.joblib
+  - Serialized vectorizer used for text feature extraction.
+
+  labels.joblib
+  - Label encoding or similar artifacts for mapping model outputs.
+
+---
+
+config and CI
+
+.github/workflows/ci.yml
+- GitHub Actions workflow for CI: runs lint, tests, and build checks on PRs/changes.
+
+---
+
+Other notes / debug artifacts
+
+served_index_css.txt
+- Saved copy of the CSS module Vite served while debugging. Useful to inspect the final produced CSS (HMR wrapping included).
+
+vite_page.html
+- Saved copy of the dev server's served page. Useful if you want to reproduce or debug requests offline.
+
+src/components/PostGenerator.tsx.bak
+- Backup: keep for reference but prune when not needed to reduce confusion.
+
+---
+
+Guidance: how to keep this document accurate
+- Re-generate/update this file when you add/remove files. I can automate that if you want: I can write a script that scans the repo and produces an updated `FILE_DESCRIPTIONS.txt` summarizing files and reading top-lines of each file for heuristics.
+
+How to use these descriptions when debugging
+- If the UI is missing styles: check `src/main.tsx` import (should import `src/index.css`) and inspect `tailwind.config.js` and `postcss.config.js` for compatibility with Tailwind/PostCSS versions.
+- If predictions are missing: check `src/services/engagementPredictor.ts` and whether the ML artifacts under `ml/artifacts` are referenced or whether the service is stubbed to return random scores.
+- If generation fails: inspect `src/services/PostGenerationService.ts` and `src/services/localGenerator.ts`.
+
+Quick commands (Windows PowerShell) to run dev and tests
+
+- Install deps:
+  npm.cmd install
+
+- Start dev server (Vite):
+  npm.cmd run dev
+
+- Run tests:
+  npm.cmd test
+
+---
+
+If you want, I can now:
+- (A) Produce a markdown version (`FILE_DESCRIPTIONS.md`) with links and TODO markers to fill missing details.
+- (B) Auto-scan each source file and include a 1–2 line summary extracted from the file header / first non-comment lines (more precise, but requires reading all files).
+- (C) Start implementing one of the TODO features we created earlier.
+
+Tell me which follow-up you want.
