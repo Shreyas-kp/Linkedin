@@ -1,0 +1,17 @@
+[
+  {
+    "id": "ex1",
+    "text": "Launched a new training pipeline that reduced model training time by 3x while maintaining accuracy. We prioritized reproducibility and clear APIs, and the community feedback has been overwhelmingly positive. Happy to share details and the codebase for anyone interested.",
+    "tags": ["training","performance","mlops"]
+  },
+  {
+    "id": "ex2",
+    "text": "After iterating on our fine-tuning approach, we improved downstream accuracy by 7%. Key changes were data augmentation and smarter learning-rate schedules. Huge thanks to the team for the fast iterations.",
+    "tags": ["finetuning","accuracy","team"]
+  },
+  {
+    "id": "ex3",
+    "text": "We open-sourced our lightweight model compression toolkit — it shrinks models by 4x with minimal loss in performance. If you work on edge ML or deployment, check it out and tell us what you build with it.",
+    "tags": ["opensource","compression","edge"]
+  }
+]

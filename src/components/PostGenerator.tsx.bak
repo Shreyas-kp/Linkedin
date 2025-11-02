@@ -1,0 +1,344 @@
+import React, { useState } from 'react';
+import { postGenerationService } from '../services/PostGenerationService';
+import { MetricsPanel } from './MetricsPanel';
+import { useTheme } from '../context/ThemeContext';
+import { PaperAirplaneIcon, ClipboardDocumentIcon, ShareIcon } from '@heroicons/react/24/outline';
+import type { Tone } from '../utils/enhancedGenerator';
+
+interface PostGeneratorProps {
+  initialContent?: string;
+}
+
+interface Metrics {
+  engagement: number;
+  impact: number;
+  relevance: number;
+}
+
+export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '' }) => {
+  const { toneStyle } = useTheme();
+  const [content, setContent] = useState(initialContent);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [metrics, setMetrics] = useState<Metrics>({
+    engagement: 75,
+    impact: 85,
+    relevance: 65
+  });
+
+  const generatePost = async () => {
+    try {
+      setIsGenerating(true);
+      const result = await postGenerationService.generateFinalPost(content, {
+        tone: toneStyle as Tone,
+      });
+      setContent(result.content);
+      setMetrics({
+        engagement: result.metrics.engagement || 75,
+        impact: result.metrics.impact || 85,
+        relevance: result.metrics.relevance || 65
+      });
+    } catch (error) {
+      console.error('Error generating post:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      // TODO: Add toast notification
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+    }
+  };
+
+  const shareToLinkedIn = () => {
+    const encodedText = encodeURIComponent(content);
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodedText}`, '_blank');
+  };
+
+  const generatePost = async () => {
+    try {
+      setIsGenerating(true);
+      const result = await postGenerationService.generateFinalPost(content, {
+        tone: toneStyle as Tone,
+      });
+      setContent(result.content);
+      setMetrics({
+        engagement: result.metrics.engagement || 75,
+        impact: result.metrics.impact || 85,
+        relevance: result.metrics.relevance || 65
+      });
+    } catch (error) {
+      console.error('Error generating post:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      // TODO: Add toast notification
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+    }
+  };
+
+  const shareToLinkedIn = () => {
+    const encodedText = encodeURIComponent(content);
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodedText}`, '_blank');
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Post Editor */}
+      <div className="card">
+        <h2 className="text-xl font-semibold mb-4">Compose Your Post</h2>
+        <textarea
+          value={content}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}
+          placeholder="Share your professional insights..."
+          className="textarea mb-4"
+        />
+
+        {/* Quick Options */}
+        <div className="flex items-center gap-4 mb-6">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showEmojis}
+              onChange={(e) => setShowEmojis(e.target.checked)}
+              className="form-checkbox text-linkedin-blue"
+            />
+            <span className="text-sm">Add Emojis</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showHashtags}
+              onChange={(e) => setShowHashtags(e.target.checked)}
+              className="form-checkbox text-linkedin-blue"
+            />
+            <span className="text-sm">Add Hashtags</span>
+          </label>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-4">
+          <button 
+            className="btn-primary"
+            onClick={generatePost}
+            disabled={isGenerating}
+          >
+            <PaperAirplaneIcon className="w-5 h-5" />
+            {isGenerating ? 'Generating...' : 'Generate'}
+          </button>
+          <button 
+            className="btn-secondary"
+            onClick={copyToClipboard}
+          >
+            <ClipboardDocumentIcon className="w-5 h-5" />
+            Copy
+          </button>
+          <button 
+            className="btn-secondary"
+            onClick={shareToLinkedIn}
+          >
+            <ShareIcon className="w-5 h-5" />
+            Share to LinkedIn
+          </button>
+        </div>
+      </div>
+
+      {/* Metrics Panel */}
+      <MetricsPanel
+        engagement={metrics.engagement}
+        impact={metrics.impact}
+        relevance={metrics.relevance}
+      />
+    </div>
+  );
+};
+
+  // load/save preferences to localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('postgen_prefs');
+      if (!raw) return;
+      const prefs = JSON.parse(raw);
+      if (prefs.tone) setTone(prefs.tone);
+      if (prefs.audience) setAudience(prefs.audience);
+      if (typeof prefs.toneIntensity === 'number') setToneIntensity(prefs.toneIntensity);
+    } catch (e) {
+      // ignore parse errors
+    }
+  }, []);
+
+  const savePrefs = () => {
+    try {
+      const prefs = { tone, audience, toneIntensity };
+      localStorage.setItem('postgen_prefs', JSON.stringify(prefs));
+    } catch (e) {}
+  };
+
+  const generatePost = async () => {
+    try {
+      setIsGenerating(true);
+      const result = await postGenerationService.generateFinalPost(content, { tone, audience, toneIntensity });
+      setContent(result.content);
+      setMetrics(result.metrics);
+    } catch (error) {
+      console.error('Error generating post:', error);
+      // Handle error appropriately
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      // Could add a toast notification here
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+    }
+  };
+
+  const renderMetrics = () => {
+    if (!metrics) return null;
+
+    return (
+      <div className="mt-4 grid grid-cols-3 gap-4">
+        {Object.entries(metrics).map(([key, value]) => (
+          <div key={key} className="text-center">
+            <div className="text-sm text-linkedin-text capitalize">{key}</div>
+            <div className="text-lg font-semibold text-linkedin-blue">
+              {Math.round(value * 100)}%
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <Card className="max-w-2xl mx-auto">
+      <div className="space-y-4">
+        <TextArea
+          label="Write your post"
+          placeholder="Share your professional insights..."
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="w-full min-h-[200px]"
+        />
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-linkedin-text mb-1">Tone</label>
+            <select
+              value={tone}
+              onChange={(e) => { setTone(e.target.value as any); setTimeout(savePrefs, 0); }}
+              className="linkedin-input w-full"
+            >
+              <option value="professional">Professional</option>
+              <option value="casual">Casual</option>
+              <option value="technical">Technical</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm text-linkedin-text mb-1">Audience</label>
+            <select
+              value={audience}
+              onChange={(e) => { setAudience(e.target.value as any); setTimeout(savePrefs, 0); }}
+              className="linkedin-input w-full"
+            >
+              <option value="professional">Professional</option>
+              <option value="student">Student</option>
+              <option value="recruiter">Recruiter</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Presets and tone intensity slider */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-linkedin-text mr-2">Presets:</span>
+            <button
+              className="linkedin-btn-secondary text-sm"
+              onClick={() => { setTone('casual'); setToneIntensity(35); savePrefs(); }}
+              type="button"
+            >
+              Casual
+            </button>
+            <button
+              className="linkedin-btn-secondary text-sm"
+              onClick={() => { setTone('professional'); setToneIntensity(60); savePrefs(); }}
+              type="button"
+            >
+              Professional
+            </button>
+            <button
+              className="linkedin-btn-secondary text-sm"
+              onClick={() => { setTone('technical'); setToneIntensity(80); savePrefs(); }}
+              type="button"
+            >
+              Technical
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-sm text-linkedin-text mb-1">Tone intensity: {toneIntensity}</label>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={toneIntensity}
+              onChange={(e) => { setToneIntensity(Number(e.target.value)); savePrefs(); }}
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <Button 
+            variant="primary"
+            onClick={generatePost}
+            disabled={isGenerating || !content.trim()}
+          >
+            {isGenerating ? 'Optimizing...' : 'Generate Final Post'}
+          </Button>
+          <Button 
+            variant="secondary"
+            onClick={copyToClipboard}
+            disabled={!content.trim()}
+          >
+            Copy to Clipboard
+          </Button>
+        </div>
+
+        {metrics && renderMetrics()}
+        
+        {content && (
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold text-linkedin-text mb-2">
+              Ready to Post:
+            </h3>
+            <div className="bg-white p-4 rounded-lg border border-linkedin-border whitespace-pre-wrap">
+              {content}
+            </div>
+            <div className="text-sm text-linkedin-text mt-2 flex justify-between items-center">
+              <span>Character count: {content.length}/3000</span>
+              {content.length > 2700 && (
+                <span className="text-yellow-600">
+                  Approaching character limit
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+};

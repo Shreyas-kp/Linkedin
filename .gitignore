@@ -1,0 +1,8 @@
+node_modules/
+dist/
+/.vite
+/.pnp.*
+coverage/
+*.log
+*.tgz
+/.env
