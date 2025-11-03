@@ -18,7 +18,7 @@ interface Metrics {
 }
 
 export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '' }) => {
-  const { toneStyle } = useTheme();
+  const { toneStyle, model, setModel } = useTheme();
   const [content, setContent] = useState(initialContent);
   const [isGenerating, setIsGenerating] = useState(false);
   const [metrics, setMetrics] = useState<Metrics>({
@@ -38,6 +38,7 @@ export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '
       setIsGenerating(true);
       const result = await postGenerationService.generateFinalPost(content, {
         tone: toneStyle as Tone,
+        model: model
       });
       setContent(result.content);
       setMetrics({
@@ -167,7 +168,18 @@ export const PostGenerator: React.FC<PostGeneratorProps> = ({ initialContent = '
     <div className="space-y-6">
       {/* Post Editor */}
       <div className="card">
-        <h2 className="text-xl font-semibold mb-4">Compose Your Post</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Compose Your Post</h2>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-500">Model</label>
+            <select value={model} onChange={(e) => setModel(e.target.value as any)} className="p-1 border rounded bg-white">
+              <option value="heuristic">Heuristic</option>
+              <option value="tfjs-small">TFJS - Small</option>
+              <option value="tfjs-local">TFJS - Local</option>
+              <option value="remote-api">Remote API</option>
+            </select>
+          </div>
+        </div>
         <textarea
           value={content}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark' | 'auto';
 type ToneStyle = 'casual' | 'professional' | 'technical';
+type ModelName = 'heuristic' | 'tfjs-local' | 'tfjs-small' | 'remote-api';
 type CustomColors = {
   primary: string;
   secondary: string;
@@ -13,10 +14,12 @@ interface ThemeContextType {
   toneStyle: ToneStyle;
   customColors: CustomColors;
   fontScale: number;
+  model: ModelName;
   setTheme: (theme: Theme) => void;
   setToneStyle: (style: ToneStyle) => void;
   setCustomColors: (colors: CustomColors) => void;
   setFontScale: (scale: number) => void;
+  setModel: (m: ModelName) => void;
 }
 
 const defaultCustomColors: CustomColors = {
@@ -30,10 +33,12 @@ const ThemeContext = createContext<ThemeContextType>({
   toneStyle: 'professional',
   customColors: defaultCustomColors,
   fontScale: 100,
+  model: 'heuristic',
   setTheme: () => {},
   setToneStyle: () => {},
   setCustomColors: () => {},
-  setFontScale: () => {}
+  setFontScale: () => {},
+  setModel: () => {}
 });
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -41,6 +46,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [toneStyle, setToneStyle] = useState<ToneStyle>('professional');
   const [customColors, setCustomColors] = useState<CustomColors>(defaultCustomColors);
   const [fontScale, setFontScale] = useState(100);
+  const [model, setModel] = useState<ModelName>('heuristic');
 
   useEffect(() => {
     // Apply theme
@@ -62,7 +68,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Apply tone style
     root.dataset.toneStyle = toneStyle;
-  }, [theme, customColors, fontScale, toneStyle]);
+    // expose selected model for debugging
+    root.dataset.model = model;
+  }, [theme, customColors, fontScale, toneStyle, model]);
 
   return (
     <ThemeContext.Provider 
@@ -71,10 +79,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         toneStyle,
         customColors, 
         fontScale,
+        model,
         setTheme, 
         setToneStyle,
         setCustomColors, 
         setFontScale 
+        , setModel
       }}
     >
       {children}

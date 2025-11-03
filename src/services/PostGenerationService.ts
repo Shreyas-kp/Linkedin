@@ -12,6 +12,7 @@ interface GenerateOptions {
   tone: Tone;
   showEmojis?: boolean;
   showHashtags?: boolean;
+  model?: string;
 }
 
 interface PostGenerationResult {
@@ -93,12 +94,17 @@ class PostGenerationService {
         }
       }
 
-      // If an on-device generator model exists, try it first (it will fall back internally)
+      // If a generator model is selected and isn't the heuristic fallback, try it first
       try {
         const prompt = [finalContent, ...(examples || [])].filter(Boolean).join('\n\n---\n\n')
-        const modelOut = await generateWithModel(prompt, { maxTokens: 256 })
-        if (modelOut && modelOut.trim()) {
-          finalContent = modelOut
+        if (opts.model && opts.model !== 'heuristic') {
+          // pass model selection through to generator wrapper if supported
+          const modelOut = await (generateWithModel as any)(prompt, { maxTokens: 256, timeoutMs: 8000, model: opts.model })
+          if (modelOut && modelOut.trim()) {
+            finalContent = modelOut
+          }
+        } else {
+          // no model selected or heuristic requested — skip on-device generator
         }
       } catch (e) {
         // ignore generator model failures and continue with heuristics

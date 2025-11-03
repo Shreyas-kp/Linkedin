@@ -18,7 +18,9 @@ export const SettingsSidebar: React.FC = () => {
     fontScale, 
     setFontScale,
     customColors,
-    setCustomColors
+    setCustomColors,
+    model: customModel,
+    setModel
   } = useTheme();
 
   return (
@@ -95,6 +97,26 @@ export const SettingsSidebar: React.FC = () => {
             <span role="img" aria-label="technical">🔧</span>
             <span>Technical</span>
           </button>
+        </div>
+      </div>
+
+      {/* Model Selector */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Generation Model</h3>
+        <div className="space-y-2">
+          <label className="block text-sm text-linkedin-text/70 mb-1">Choose model used for generation</label>
+          <select
+            value={customModel}
+            onChange={(e) => setModel(e.target.value as any)}
+            className="w-full p-2 border rounded"
+            aria-label="Select generation model"
+            id="model-select"
+          >
+            <option value="heuristic">Heuristic (fast, local)</option>
+            <option value="tfjs-small">TFJS - Small (local)</option>
+            <option value="tfjs-local">TFJS - Full TFJS (local)</option>
+            <option value="remote-api">Remote API (remote)</option>
+          </select>
         </div>
       </div>
 
